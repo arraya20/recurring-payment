@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101820" />
+    <meta
+      name="description"
+      content="Prepare and track recurring Pharos payments without storing wallet keys."
+    />
+    <title>Recurring Payment Agent · Pharos</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Pharos recurring payment agent home">
+        <span class="brand-mark" aria-hidden="true">P</span>
+        <span>Pharos <span class="brand-sub">Payment Agent</span></span>
+      </a>
+      <div class="network-status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="network-label">Connecting to Mainnet…</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">RECURRING PAYMENTS · PHAROS MAINNET</p>
+          <h1 id="page-title">Plan it. Review it. Sign it yourself.</h1>
+          <p class="intro-copy">
+            Set a weekly or monthly payment. The scheduler checks due payments
+            and prepares an unsigned transaction for your review.
+          </p>
+        </div>
+        <aside class="safety-note" aria-label="Transaction safety">
+          <strong>Unsigned only</strong>
+          <span>
+            This app never signs or broadcasts transactions. Your wallet stays
+            under your control.
+          </span>
+        </aside>
+      </section>
+
+      <div id="app-status" class="notice" role="status" aria-live="polite">
+        Connecting securely…
+      </div>
+
+      <section class="workspace-grid" aria-label="Payment workspace">
+        <section class="panel setup-panel" aria-labelledby="setup-title">
+          <div class="section-heading">
+            <div>
+              <p class="step-label">01 / SET UP</p>
+              <h2 id="setup-title">New payment schedule</h2>
+            </div>
+          </div>
+          <form id="schedule-form">
+            <label>
+              Schedule name
+              <input
+                name="label"
+                maxlength="80"
+                placeholder="Monthly rent"
+                required
+              />
+            </label>
+
+            <div class="form-row">
+              <label>
+                Sender address
+                <input
+                  name="sender"
+                  inputmode="text"
+                  autocomplete="off"
+                  placeholder="0x…"
+                  required
+                />
+              </label>
+              <label>
+                Recipient address
+                <input
+                  name="recipient"
+                  inputmode="text"
+                  autocomplete="off"
+                  placeholder="0x…"
+                  required
+                />
+              </label>
+            </div>
+
+            <div class="form-row form-row-three">
+              <label>
+                Amount
+                <input
+                  name="amount"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  placeholder="0.00"
+                  required
+                />
+              </label>
+              <label>
+                Token
+                <select name="asset" id="asset">
+                  <option value="PHRS">PHRS</option>
+                  <option value="USDC">USDC</option>
+                  <option value="CUSTOM">Custom ERC-20</option>
+                </select>
+              </label>
+              <label>
+                Frequency
+                <select name="cadence">
+                  <option value="WEEKLY">Weekly</option>
+                  <option value="MONTHLY">Monthly</option>
+                </select>
+              </label>
+            </div>
+
+            <label id="token-contract-field" class="hidden">
+              Token contract address
+              <input
+                name="tokenContract"
+                inputmode="text"
+                autocomplete="off"
+                placeholder="0x…"
+              />
+            </label>
+
+            <div class="form-row">
+              <label>
+                First payment
+                <input name="startLocal" type="datetime-local" required />
+              </label>
+              <label>
+                Time zone
+                <input name="timezone" required />
+              </label>
+            </div>
+            <p class="field-help">
+              Monthly dates keep their original day where possible. If a month
+              is shorter, the payment falls on its final day.
+            </p>
+            <label>
+              Optional end date
+              <input name="endLocal" type="datetime-local" />
+            </label>
+            <label>
+              Optional payment limit
+              <input
+                name="occurrenceLimit"
+                type="number"
+                min="1"
+                max="520"
+                step="1"
+                placeholder="No limit"
+              />
+            </label>
+            <button id="create-schedule" class="button button-primary" type="submit">
+              Create schedule
+            </button>
+            <p class="field-help">
+              The scheduler runs every minute. A late run is recorded; it cannot
+              guarantee exact execution time.
+            </p>
+          </form>
+        </section>
+
+        <section id="next-payment" class="panel" aria-labelledby="next-title">
+          <div class="section-heading">
+            <div>
+              <p class="step-label">02 / NEXT PAYMENT</p>
+              <h2 id="next-title">Your schedules</h2>
+            </div>
+            <button id="refresh" class="button button-quiet" type="button">
+              Refresh
+            </button>
+          </div>
+          <div id="schedule-list" class="schedule-list">
+            <p class="empty-state">Loading schedules…</p>
+          </div>
+          <div class="scheduler-meta">
+            <span class="meta-label">Scheduler</span>
+            <span id="heartbeat">No scheduler heartbeat recorded yet.</span>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel history-panel" aria-labelledby="history-title">
+        <div class="section-heading">
+          <div>
+            <p class="step-label">03 / PAYMENT HISTORY</p>
+            <h2 id="history-title">Occurrences</h2>
+          </div>
+          <span id="updated-at" class="muted"></span>
+        </div>
+        <div class="history-grid">
+          <section aria-labelledby="pending-title">
+            <h3 id="pending-title">Pending</h3>
+            <div id="pending-list" class="history-list">
+              <p class="empty-state">No pending payments.</p>
+            </div>
+          </section>
+          <section aria-labelledby="paid-title">
+            <h3 id="paid-title">Paid</h3>
+            <div id="paid-list" class="history-list">
+              <p class="empty-state">No verified payments.</p>
+            </div>
+          </section>
+          <section aria-labelledby="failed-title">
+            <h3 id="failed-title">Failed or blocked</h3>
+            <div id="failed-list" class="history-list">
+              <p class="empty-state">No failed or blocked payments.</p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="occurrence-panel" class="panel detail-panel" aria-labelledby="detail-title">
+        <div class="section-heading">
+          <div>
+            <p class="step-label">04 / REVIEW</p>
+            <h2 id="detail-title">Select a payment occurrence</h2>
+          </div>
+          <span id="occurrence-state" class="state-badge hidden"></span>
+        </div>
+        <p id="occurrence-empty" class="empty-state">
+          Select an occurrence above to inspect its terms and available actions.
+        </p>
+        <div id="occurrence-detail" class="hidden">
+          <dl id="occurrence-terms" class="detail-list"></dl>
+          <div id="failure-reason" class="error-box hidden"></div>
+          <details class="evidence">
+            <summary>Validation evidence</summary>
+            <pre id="validation-evidence"></pre>
+          </details>
+          <details class="evidence">
+            <summary>Unsigned transaction</summary>
+            <pre id="unsigned-transaction">No transaction has been prepared.</pre>
+          </details>
+          <div class="action-area">
+            <label class="review-check">
+              <input id="review-accepted" type="checkbox" />
+              I reviewed the payment terms and understand this is unsigned.
+            </label>
+            <div class="action-row">
+              <button id="review-button" class="button button-primary" type="button" disabled>
+                Confirm review
+              </button>
+              <button id="prepare-button" class="button" type="button" disabled>
+                Prepare unsigned transaction
+              </button>
+              <button id="revalidate-button" class="button hidden" type="button">
+                Recheck balance and gas
+              </button>
+              <button id="download-button" class="button" type="button" disabled>
+                Download transaction
+              </button>
+            </div>
+            <p class="field-help">
+              Preparing does not pay. Review the exported transaction and sign
+              only in a wallet you control.
+            </p>
+            <label>
+              Transaction hash after external signing
+              <input
+                id="transaction-hash"
+                placeholder="0x followed by 64 hex characters"
+                autocomplete="off"
+              />
+            </label>
+            <div class="action-row">
+              <button id="attach-button" class="button" type="button" disabled>
+                Attach hash
+              </button>
+              <button id="reconcile-button" class="button" type="button" disabled>
+                Check receipt
+              </button>
+            </div>
+            <p id="reconciliation-note" class="field-help" aria-live="polite">
+              A transaction hash is not proof of payment. Paid status requires a verified receipt.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Pharos Mainnet · Chain ID 1672</span>
+      <span>Read-only chain checks · external wallet signing</span>
+    </footer>
+  </body>
+</html>
