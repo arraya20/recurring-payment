@@ -51,4 +51,5 @@ Cron is best effort, not an exact-time execution guarantee. A prepared unsigned 
 ## Submission
 
 - [Pharos Recurring Payment Agent task](https://pharos-agent-arena.vercel.app/tasks/recurring-payment-agent)
-- A public demo and verified deployment must be added after Cloudflare deployment; this repository does not claim either is live.
+- Public demo: https://recurring-payment.nampharos.web.id/
+- The production Worker serves the dashboard and API from the custom domain, with D1 persistence and a one-minute Cron trigger.

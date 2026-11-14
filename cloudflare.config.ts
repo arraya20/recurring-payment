@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
   return {
     worker: {
       name: "recurring-payment-agent",
+      domains: ["recurring-payment.nampharos.web.id"],
       compatibilityDate: "2026-11-14",
       entrypoint,
       env: {
